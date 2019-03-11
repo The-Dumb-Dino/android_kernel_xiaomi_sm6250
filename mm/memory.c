@@ -2846,8 +2846,7 @@ static int do_wp_page(struct vm_fault *vmf)
 		     mm_tlb_flush_pending(vmf->vma->vm_mm)))
 		flush_tlb_page(vmf->vma, vmf->address);
 
-	vmf->page = __vm_normal_page(vma, vmf->address, vmf->orig_pte, false,
-				     vmf->vma_flags);
+	vmf->page = vm_normal_page(vma, vmf->address, vmf->orig_pte);
 	if (!vmf->page) {
 		/*
 		 * VM_MIXEDMAP !pfn_valid() case, or VM_SOFTDIRTY clear on a

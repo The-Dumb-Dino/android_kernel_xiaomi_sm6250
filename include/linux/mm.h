@@ -315,7 +315,6 @@ extern pgprot_t protection_map[16];
  * @FAULT_FLAG_INSTRUCTION: The fault was during an instruction fetch.
  * @FAULT_FLAG_INTERRUPTIBLE: The fault can be interrupted by non-fatal signals.
  * @FAULT_FLAG_PREFAULT_OLD: Make faultaround ptes old.
- * @FAULT_FLAG_SPECULATIVE: Speculative fault, not holding mmap_sem.
  *
  * About @FAULT_FLAG_ALLOW_RETRY and @FAULT_FLAG_TRIED: we can specify
  * whether we would allow page faults to retry by specifying these two
@@ -347,7 +346,6 @@ extern pgprot_t protection_map[16];
 #define FAULT_FLAG_INSTRUCTION  		0x100
 #define FAULT_FLAG_INTERRUPTIBLE		0x200
 #define FAULT_FLAG_PREFAULT_OLD			0x400
-#define FAULT_FLAG_SPECULATIVE			0x800
 
 /*
  * The default fault flags that should be used by most of the

@@ -885,6 +885,7 @@ static inline bool cgroup_task_frozen(struct task_struct *task)
 }
 
 #endif /* !CONFIG_CGROUPS */
+
 #ifdef CONFIG_CGROUP_BPF
 static inline void cgroup_bpf_get(struct cgroup *cgrp)
 {

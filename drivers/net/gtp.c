@@ -1389,7 +1389,7 @@ static int __init gtp_init(void)
 	if (err < 0)
 		goto unreg_pernet_subsys;
 
-	err = register_pernet_subsys(&gtp_net_ops);
+	err = genl_register_family(&gtp_genl_family);
 	if (err < 0)
 		goto unreg_rtnl_link;
 

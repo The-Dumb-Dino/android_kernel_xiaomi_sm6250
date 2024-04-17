@@ -1821,6 +1821,8 @@ enum {
 	ALC887_FIXUP_BASS_CHMAP,
 	ALC1220_FIXUP_GB_DUAL_CODECS,
 	ALC1220_FIXUP_CLEVO_P950,
+	ALC1220_FIXUP_CLEVO_PB51ED,
+	ALC1220_FIXUP_CLEVO_PB51ED_PINS,
 };
 
 static void alc889_fixup_coef(struct hda_codec *codec,
@@ -2053,6 +2055,17 @@ static void alc1220_fixup_clevo_p950(struct hda_codec *codec,
 	 */
 	snd_hda_override_conn_list(codec, 0x14, 1, conn1);
 	snd_hda_override_conn_list(codec, 0x1b, 1, conn1);
+}
+
+static void alc_fixup_headset_mode_no_hp_mic(struct hda_codec *codec,
+				const struct hda_fixup *fix, int action);
+
+static void alc1220_fixup_clevo_pb51ed(struct hda_codec *codec,
+				     const struct hda_fixup *fix,
+				     int action)
+{
+	alc1220_fixup_clevo_p950(codec, fix, action);
+	alc_fixup_headset_mode_no_hp_mic(codec, fix, action);
 }
 
 static const struct hda_fixup alc882_fixups[] = {
@@ -2308,6 +2321,19 @@ static const struct hda_fixup alc882_fixups[] = {
 		.type = HDA_FIXUP_FUNC,
 		.v.func = alc1220_fixup_clevo_p950,
 	},
+	[ALC1220_FIXUP_CLEVO_PB51ED] = {
+		.type = HDA_FIXUP_FUNC,
+		.v.func = alc1220_fixup_clevo_pb51ed,
+	},
+	[ALC1220_FIXUP_CLEVO_PB51ED_PINS] = {
+		.type = HDA_FIXUP_PINS,
+		.v.pins = (const struct hda_pintbl[]) {
+			{ 0x19, 0x01a1913c }, /* use as headset mic, without its own jack detect */
+			{}
+		},
+		.chained = true,
+		.chain_id = ALC1220_FIXUP_CLEVO_PB51ED,
+	},
 };
 
 static const struct snd_pci_quirk alc882_fixup_tbl[] = {
@@ -2383,6 +2409,10 @@ static const struct snd_pci_quirk alc882_fixup_tbl[] = {
 	SND_PCI_QUIRK_VENDOR(0x1462, "MSI", ALC882_FIXUP_GPIO3),
 	SND_PCI_QUIRK(0x147b, 0x107a, "Abit AW9D-MAX", ALC882_FIXUP_ABIT_AW9D_MAX),
 	SND_PCI_QUIRK(0x1558, 0x9501, "Clevo P950HR", ALC1220_FIXUP_CLEVO_P950),
+	SND_PCI_QUIRK(0x1558, 0x95e2, "Clevo P950ER", ALC1220_FIXUP_CLEVO_P950),
+	SND_PCI_QUIRK(0x1558, 0x96e1, "System76 Oryx Pro (oryp5)", ALC1220_FIXUP_CLEVO_PB51ED_PINS),
+	SND_PCI_QUIRK(0x1558, 0x97e1, "System76 Oryx Pro (oryp5)", ALC1220_FIXUP_CLEVO_PB51ED_PINS),
+	SND_PCI_QUIRK(0x1558, 0x65d1, "Tuxedo Book XC1509", ALC1220_FIXUP_CLEVO_PB51ED_PINS),
 	SND_PCI_QUIRK_VENDOR(0x1558, "Clevo laptop", ALC882_FIXUP_EAPD),
 	SND_PCI_QUIRK(0x161f, 0x2054, "Medion laptop", ALC883_FIXUP_EAPD),
 	SND_PCI_QUIRK(0x17aa, 0x3a0d, "Lenovo Y530", ALC882_FIXUP_LENOVO_Y530),

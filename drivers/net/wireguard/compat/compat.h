@@ -24,6 +24,134 @@ static inline void *__compat_kvcalloc(size_t n, size_t size, gfp_t flags)
 #include <net/genetlink.h>
 #define genl_dump_check_consistent(a, b) genl_dump_check_consistent(a, b, &genl_family)
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 13, 0) && !defined(ISRHEL7)
+static inline void *skb_put_data(struct sk_buff *skb, const void *data, unsigned int len)
+{
+	void *tmp = skb_put(skb, len);
+	memcpy(tmp, data, len);
+	return tmp;
+}
+#endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 19, 0) && !defined(ISRHEL7)
+#define napi_complete_done(n, work_done) napi_complete(n)
+#endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 5, 0)
+#include <linux/netdevice.h>
+/* NAPI_STATE_SCHED gets set by netif_napi_add anyway, so this is safe.
+ * Also, kernels without NAPI_STATE_NO_BUSY_POLL don't have a call to
+ * napi_hash_add inside of netif_napi_add.
+ */
+#define NAPI_STATE_NO_BUSY_POLL NAPI_STATE_SCHED
+#endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 14, 0)
+#include <linux/atomic.h>
+#ifndef atomic_read_acquire
+#define atomic_read_acquire(v) ({ int __compat_p1 = atomic_read(v); smp_rmb(); __compat_p1; })
+#endif
+#ifndef atomic_set_release
+#define atomic_set_release(v, i) ({ smp_wmb(); atomic_set(v, i); })
+#endif
+#elif LINUX_VERSION_CODE < KERNEL_VERSION(4, 3, 0)
+#include <linux/atomic.h>
+#ifndef atomic_read_acquire
+#define atomic_read_acquire(v) smp_load_acquire(&(v)->counter)
+#endif
+#ifndef atomic_set_release
+#define atomic_set_release(v, i) smp_store_release(&(v)->counter, (i))
+#endif
+#endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 17, 0) && (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 15, 0) || LINUX_VERSION_CODE < KERNEL_VERSION(4, 14, 285)) && (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 10, 0) || LINUX_VERSION_CODE < KERNEL_VERSION(4, 9, 320))
+static inline void le32_to_cpu_array(u32 *buf, unsigned int words)
+{
+	while (words--) {
+		__le32_to_cpus(buf);
+		buf++;
+	}
+}
+static inline void cpu_to_le32_array(u32 *buf, unsigned int words)
+{
+	while (words--) {
+		__cpu_to_le32s(buf);
+		buf++;
+	}
+}
+#endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 14, 0)
+#include <crypto/algapi.h>
+static inline void crypto_xor_cpy(u8 *dst, const u8 *src1, const u8 *src2,
+				  unsigned int size)
+{
+	if (IS_ENABLED(CONFIG_HAVE_EFFICIENT_UNALIGNED_ACCESS) &&
+	    __builtin_constant_p(size) &&
+	    (size % sizeof(unsigned long)) == 0) {
+		unsigned long *d = (unsigned long *)dst;
+		unsigned long *s1 = (unsigned long *)src1;
+		unsigned long *s2 = (unsigned long *)src2;
+
+		while (size > 0) {
+			*d++ = *s1++ ^ *s2++;
+			size -= sizeof(unsigned long);
+		}
+	} else {
+		if (unlikely(dst != src1))
+			memmove(dst, src1, size);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 11, 0)
+		crypto_xor(dst, src2, size);
+#else
+		__crypto_xor(dst, src2, size);
+#endif
+	}
+}
+#endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 17, 0)
+#define read_cpuid_part() read_cpuid_part_number()
+#endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 17, 0) && !defined(ISRHEL7)
+#define hlist_add_behind(a, b) hlist_add_after(b, a)
+#endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 0, 0) && !defined(ISRHEL8)
+#define totalram_pages() totalram_pages
+#endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 14, 0)
+struct __kernel_timespec {
+	int64_t tv_sec, tv_nsec;
+};
+#elif LINUX_VERSION_CODE < KERNEL_VERSION(5, 1, 0)
+#include <linux/time64.h>
+#ifdef __kernel_timespec
+#undef __kernel_timespec
+struct __kernel_timespec {
+	int64_t tv_sec, tv_nsec;
+};
+#endif
+#endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 12, 0)
+#include <linux/kernel.h>
+#ifndef ALIGN_DOWN
+#define ALIGN_DOWN(x, a) __ALIGN_KERNEL((x) - ((a) - 1), (a))
+#endif
+#endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 1, 0) && !defined(ISRHEL8)
+#include <linux/skbuff.h>
+#define skb_probe_transport_header(a) skb_probe_transport_header(a, 0)
+#endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 16, 0) && !defined(ISRHEL7)
+#define ignore_df local_df
+#endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 1, 0) && !defined(ISRHEL8)
 /* Note that all intentional uses of the non-_bh variety need to explicitly
  * undef these, conditionalized on COMPAT_CANNOT_DEPRECIATE_BH_RCU.
  */

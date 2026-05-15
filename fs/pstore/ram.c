@@ -368,14 +368,17 @@ out:
 static size_t ramoops_write_kmsg_hdr(struct persistent_ram_zone *prz,
 				     struct pstore_record *record)
 {
-	char hdr[36]; /* "===="(4), %lld(20), "."(1), %06lu(6), "-%c\n"(3) */
+	char *hdr;
 	size_t len;
 
 	hdr = kasprintf(GFP_ATOMIC, RAMOOPS_KERNMSG_HDR TVSEC_FMT ".%lu-%c\n",
 		record->time.tv_sec,
 		record->time.tv_nsec / 1000,
 		record->compressed ? 'C' : 'D');
+	WARN_ON_ONCE(!hdr);
+	len = hdr ? strlen(hdr) : 0;
 	persistent_ram_write(prz, hdr, len);
+	kfree(hdr);
 
 	return len;
 }

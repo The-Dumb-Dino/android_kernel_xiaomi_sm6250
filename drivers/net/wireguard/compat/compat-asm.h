@@ -7,10 +7,56 @@
 #define _WG_COMPATASM_H
 
 #include <linux/linkage.h>
+#include <linux/kconfig.h>
+#include <linux/version.h>
 
+#ifdef RHEL_MAJOR
+#if RHEL_MAJOR == 7
+#define ISRHEL7
+#elif RHEL_MAJOR == 8
+#define ISRHEL8
+#if RHEL_MINOR >= 6
+#define ISCENTOS8S
+#endif
+#endif
+#endif
+
+/* PaX compatibility */
+#if defined(RAP_PLUGIN) && defined(RAP_ENTRY)
+#undef ENTRY
+#define ENTRY RAP_ENTRY
+#endif
+
+#if defined(__LINUX_ARM_ARCH__) && LINUX_VERSION_CODE < KERNEL_VERSION(3, 17, 0)
+	.irp	c,,eq,ne,cs,cc,mi,pl,vs,vc,hi,ls,ge,lt,gt,le,hs,lo
+	.macro	ret\c, reg
+#if __LINUX_ARM_ARCH__ < 6
+	mov\c	pc, \reg
+#else
+	.ifeqs	"\reg", "lr"
+	bx\c	\reg
+	.else
+	mov\c	pc, \reg
+	.endif
+#endif
+	.endm
+	.endr
+#endif
+
+#if defined(__LINUX_ARM_ARCH__) && LINUX_VERSION_CODE < KERNEL_VERSION(3, 15, 0)
+#include <asm/assembler.h>
+#define lspush push
+#define lspull pull
+#undef push
+#undef pull
+#endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 4, 76) && !defined(ISRHEL8) && !defined(SYM_FUNC_START)
 #define SYM_FUNC_START ENTRY
 #define SYM_FUNC_END ENDPROC
+#endif
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 5, 0)
 #define blake2s_compress_ssse3 zinc_blake2s_compress_ssse3
 #define blake2s_compress_avx512 zinc_blake2s_compress_avx512
 #define poly1305_init_arm zinc_poly1305_init_arm
@@ -38,5 +84,6 @@
 #define chacha20_arm zinc_chacha20_arm
 #define hchacha20_arm zinc_hchacha20_arm
 #define chacha20_neon zinc_chacha20_neon
+#endif
 
 #endif /* _WG_COMPATASM_H */
